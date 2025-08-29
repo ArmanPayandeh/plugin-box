@@ -4,12 +4,12 @@ Simple plugin to install and manage Ollama on your system.
 
 ## Quick Start
 
-1. Make scripts executable:
+### Make scripts executable:
 ```bash
 chmod +x *.sh
 ```
 
-1. Install Ollama:
+1. Install service:
 
 ```bash
 ./install.sh
@@ -19,4 +19,14 @@ chmod +x *.sh
 
 ```bash
 ./start.sh
+```
+3. Stop the service:
+
+```bash
+./stop.sh
+```
+4. Uninstall the service:
+
+```bash
+./uninstall.sh
 ```
