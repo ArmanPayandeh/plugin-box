@@ -9,7 +9,13 @@ NC='\033[0m'
 
 echo -e "${YELLOW}Starting Ollama service...${NC}"
 
-# Start and enable the service
+# Ensure configuration is correct
+if ! grep -q "OLLAMA_HOST=0.0.0.0" /etc/systemd/system/ollama.service; then
+    echo -e "${YELLOW}Fixing configuration...${NC}"
+    ./fix-binding.sh
+fi
+
+# Start the service
 sudo systemctl start ollama
 sudo systemctl enable ollama
 
@@ -23,55 +29,76 @@ for i in {1..30}; do
     sleep 1
 done
 
-# Get server IP addresses
-echo -e "\n${BLUE}=== Server Access Information ===${NC}"
+# Check actual binding
+echo -e "\n${YELLOW}Checking network binding...${NC}"
+BINDING=$(sudo netstat -tlnp 2>/dev/null | grep 11434 || sudo ss -tlnp 2>/dev/null | grep 11434)
+echo "$BINDING"
 
-# Get all network interfaces IPs
-echo -e "${GREEN}Available endpoints:${NC}"
-echo -e "${YELLOW}Local:${NC} http://localhost:11434"
-
-# Get all IP addresses
-for ip in $(hostname -I); do
-    echo -e "${YELLOW}Network:${NC} http://${ip}:11434"
-done
-
-# Get public IP (if available)
-PUBLIC_IP=$(curl -s -4 ifconfig.me 2>/dev/null || echo "")
-if [ ! -z "$PUBLIC_IP" ]; then
-    echo -e "${YELLOW}Public:${NC} http://${PUBLIC_IP}:11434"
-    MAIN_URL="http://${PUBLIC_IP}:11434"
+if echo "$BINDING" | grep -q "0.0.0.0:11434"; then
+    echo -e "${GREEN}✓ Ollama is correctly bound to 0.0.0.0:11434${NC}"
 else
-    # Use first local IP if no public IP
-    FIRST_IP=$(hostname -I | awk '{print $1}')
-    MAIN_URL="http://${FIRST_IP}:11434"
+    echo -e "${RED}✗ Ollama is NOT bound to 0.0.0.0:11434${NC}"
+    echo -e "${YELLOW}Running fix script...${NC}"
+    ./fix-binding.sh
 fi
 
-# Install qrencode if not present
-if ! command -v qrencode &> /dev/null; then
-    echo -e "\n${YELLOW}Installing qrencode for QR code generation...${NC}"
-    sudo apt-get update -qq
-    sudo apt-get install -y qrencode
+# Get server IP addresses
+echo -e "\n${BLUE}=== Server Access Information ===${NC}"
+echo -e "\n${GREEN}Available endpoints:${NC}"
+
+# Local
+echo -e "${YELLOW}Local:${NC} http://localhost:11434"
+
+# All IPs
+for ip in $(hostname -I); do
+    echo -e "${YELLOW}Network:${NC} http://$ip:11434"
+done
+
+# Public IP
+PUBLIC_IP=$(curl -s -4 ifconfig.me 2>/dev/null || echo "")
+if [ ! -z "$PUBLIC_IP" ]; then
+    echo -e "${YELLOW}Public:${NC} http://$PUBLIC_IP:11434"
+    MAIN_URL="http://$PUBLIC_IP:11434"
+else
+    FIRST_IP=$(hostname -I | awk '{print $1}')
+    MAIN_URL="http://$FIRST_IP:11434"
+fi
+
+# Test connectivity
+echo -e "\n${BLUE}=== Testing Connectivity ===${NC}"
+echo -e "${YELLOW}Testing local connection...${NC}"
+if curl -s http://localhost:11434/api/version >/dev/null 2>&1; then
+    echo -e "${GREEN}✓ Local connection OK${NC}"
+else
+    echo -e "${RED}✗ Local connection failed${NC}"
+fi
+
+echo -e "${YELLOW}Testing network connection...${NC}"
+FIRST_IP=$(hostname -I | awk '{print $1}')
+if curl -s http://$FIRST_IP:11434/api/version >/dev/null 2>&1; then
+    echo -e "${GREEN}✓ Network connection OK${NC}"
+else
+    echo -e "${RED}✗ Network connection failed - checking firewall...${NC}"
+    echo -e "${YELLOW}You may need to open port 11434 in your firewall${NC}"
 fi
 
 # Generate QR code
-echo -e "\n${BLUE}=== QR Code for Mobile Access ===${NC}"
+echo -e "\n${BLUE}=== QR Code for API Access ===${NC}"
 echo -e "${YELLOW}Scan this QR code to access Ollama API:${NC}\n"
-qrencode -t UTF8 "$MAIN_URL"
-echo -e "\n${GREEN}URL: $MAIN_URL${NC}"
+qrencode -t ANSIUTF8 "$MAIN_URL"
 
-# Show service status
-echo -e "\n${BLUE}=== Service Status ===${NC}"
-sudo systemctl status ollama --no-pager | head -n 10
+# Show usage
+echo -e "\n${BLUE}=== Quick Test Commands ===${NC}"
+echo -e "${YELLOW}From this server:${NC}"
+echo -e " curl http://localhost:11434/api/version"
+echo -e "\n${YELLOW}From another machine:${NC}"
+echo -e " curl $MAIN_URL/api/version"
+echo -e "\n${YELLOW}Pull a model:${NC}"
+echo -e " ollama pull llama2"
 
-# Show usage examples
-echo -e "\n${BLUE}=== Quick Start Guide ===${NC}"
-echo -e "${YELLOW}1. Pull a model:${NC}"
-echo -e "   ollama pull llama2:7b"
-echo -e "\n${YELLOW}2. Test the API:${NC}"
-echo -e "   curl ${MAIN_URL}/api/version"
-echo -e "\n${YELLOW}3. Generate text:${NC}"
-echo -e "   curl ${MAIN_URL}/api/generate -d '{"
-echo -e "     \"model\": \"llama2:7b\","
-echo -e "     \"prompt\": \"Hello, how are you?\""
-echo -e "   }'"
-echo -e "\n${GREEN}Ollama is ready to use!${NC}"
+# Save info
+echo -e "\n${YELLOW}Connection info saved to:${NC} /opt/ollama/connection-info.txt"
+sudo mkdir -p /opt/ollama
+echo "Ollama API Endpoints:" | sudo tee /opt/ollama/connection-info.txt
+echo "Local: http://localhost:11434" | sudo tee -a /opt/ollama/connection-info.txt
+echo "Network: $MAIN_URL" | sudo tee -a /opt/ollama/connection-info.txt
