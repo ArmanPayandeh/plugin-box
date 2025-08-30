@@ -1,0 +1,62 @@
+{
+  "name": "LocalAI",
+  "version": "1.0.0",
+  "description": "LocalAI - Self-hosted, OpenAI-compatible API for running LLMs locally",
+  "author": "LocalAI Plugin for Fula",
+  "license": "MIT",
+  "icon": "localai.png",
+  "category": "AI/ML",
+  "tags": ["ai", "llm", "openai", "api", "inference", "local"],
+  "homepage": "https://localai.io",
+  "repository": "https://github.com/mudler/LocalAI",
+  "requirements": {
+    "docker": ">=20.10.0",
+    "docker-compose": ">=1.29.0",
+    "ram": "4GB",
+    "disk": "10GB"
+  },
+  "commands": {
+    "install": {
+      "script": "install.sh",
+      "description": "Install LocalAI service and dependencies"
+    },
+    "start": {
+      "script": "start.sh",
+      "description": "Start LocalAI service on port 8080"
+    },
+    "stop": {
+      "script": "stop.sh",
+      "description": "Stop LocalAI service"
+    },
+    "uninstall": {
+      "script": "uninstall.sh",
+      "description": "Uninstall LocalAI and optionally remove all data"
+    }
+  },
+  "endpoints": {
+    "api": "http://0.0.0.0:8080",
+    "health": "http://0.0.0.0:8080/healthz",
+    "models": "http://0.0.0.0:8080/v1/models",
+    "chat": "http://0.0.0.0:8080/v1/chat/completions",
+    "completions": "http://0.0.0.0:8080/v1/completions",
+    "embeddings": "http://0.0.0.0:8080/v1/embeddings"
+  },
+  "configuration": {
+    "port": 8080,
+    "bind": "0.0.0.0",
+    "api_key_required": true,
+    "models_path": "~/.localai/models",
+    "data_path": "~/.localai/data",
+    "images_path": "~/.localai/images"
+  },
+  "features": [
+    "OpenAI API compatible",
+    "Multiple model support",
+    "Text generation",
+    "Chat completions",
+    "Embeddings generation",
+    "Image generation",
+    "Audio transcription",
+    "No GPU required (CPU mode)"
+  ]
+}

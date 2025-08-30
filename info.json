@@ -1,9 +1,5 @@
 [
     {
-        "name": "lm-studio-ruuner",
-        "icon-file": "https://avatars.githubusercontent.com/u/133744619?s=200&v=4"
-    },
-    {
         "name": "ollama-runner",
         "icon-file": "https://avatars.githubusercontent.com/u/151674099?s=200&v=4"
     },
