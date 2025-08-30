@@ -1,30 +1,5 @@
 #!/bin/bash
 
-LOCALAI_DIR="/opt/localai"
-
-echo "Uninstalling LocalAI..."
-
-# Stop the service if running
-if sudo docker ps | grep -q localai; then
-    echo "Stopping LocalAI service..."
-    cd $LOCALAI_DIR
-    sudo docker-compose down
-fi
-
-# Remove containers and images
-echo "Removing LocalAI containers and images..."
-sudo docker rm -f localai 2>/dev/null
-sudo docker rmi localai/localai:latest-aio-cpu 2>/dev/null
-
-# Ask user about data removal
-read -p "Do you want to remove all LocalAI data and modelsبر اساس بررسی ساختار پلاگین‌های موجود در مخزن GitHub که اشاره کردید و اطلاعاتی که از جستجو به دست آوردم، یک پلاگین کامل برای LocalAI می‌نویسم:
-
-## ساختار پلاگین LocalAI
-
-### 1. `install.sh`
-```bash
-#!/bin/bash
-
 set -e
 
 echo "Installing LocalAI..."
@@ -56,6 +31,7 @@ services:
     image: localai/localai:latest
     container_name: localai
     restart: unless-stopped
+    network_mode: "host" 
     ports:
       - "0.0.0.0:8080:8080"
     volumes:
